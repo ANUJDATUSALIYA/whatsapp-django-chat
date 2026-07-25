@@ -1,0 +1,110 @@
+{% load static %}
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ChatFlow</title>
+  <link rel="stylesheet" href="{% static 'chat/styles.css' %}">
+</head>
+<body>
+  <main class="app">
+    <aside class="sidebar" aria-label="Chats">
+      <header class="sidebar-header">
+        <div class="me">
+          <span class="avatar me-avatar">AJ</span>
+          <div>
+            <strong>Anuj</strong>
+            <span>Available</span>
+          </div>
+        </div>
+        <div class="header-icons">
+          <button type="button" title="New chat" aria-label="New chat">+</button>
+          <button type="button" title="Menu" aria-label="Menu">...</button>
+        </div>
+      </header>
+
+      <label class="search-box">
+        <span>Search</span>
+        <input id="chatSearch" type="search" placeholder="Search or start a new chat">
+      </label>
+
+      <nav class="chat-list" id="chatList">
+        {% for conversation in conversations %}
+          {% with last=conversation.last_message %}
+          <a class="chat-card {% if active and active.id == conversation.id %}active{% endif %}" href="{% url 'conversation' conversation.id %}" data-name="{{ conversation.title|lower }}">
+            <span class="avatar" style="background: {{ conversation.contact.accent }}">{{ conversation.contact.initials }}</span>
+            <span class="chat-card-copy">
+              <span class="chat-card-top">
+                <strong>{{ conversation.title }}</strong>
+                <time>{{ conversation.updated_at|date:"H:i" }}</time>
+              </span>
+              <span class="chat-card-bottom">
+                <span>{% if last.is_from_me %}You: {% endif %}{{ last.body|truncatechars:44 }}</span>
+                {% if conversation.unread_count %}
+                  <b>{{ conversation.unread_count }}</b>
+                {% endif %}
+              </span>
+            </span>
+          </a>
+          {% endwith %}
+        {% empty %}
+          <p class="empty-list">No chats yet.</p>
+        {% endfor %}
+      </nav>
+    </aside>
+
+    <section class="conversation" aria-label="Conversation">
+      {% if active %}
+        <header class="conversation-header">
+          <a class="back-link" href="{% url 'inbox' %}" aria-label="Back to chats">&lt;</a>
+          <span class="avatar" style="background: {{ active.contact.accent }}">{{ active.contact.initials }}</span>
+          <div class="conversation-title">
+            <h1>{{ active.title }}</h1>
+            <span>
+              {% if active.contact.is_online %}
+                online
+              {% else %}
+                {{ active.contact.status }}
+              {% endif %}
+            </span>
+          </div>
+          <div class="conversation-actions">
+            <button type="button" title="Video call" aria-label="Video call">V</button>
+            <button type="button" title="Voice call" aria-label="Voice call">C</button>
+            <button type="button" title="Search" aria-label="Search">S</button>
+          </div>
+        </header>
+
+        <div class="message-pane" id="messagePane">
+          <p class="date-pill">Today</p>
+          {% for message in messages %}
+            <article class="message {% if message.is_from_me %}sent{% else %}received{% endif %}">
+              <p>{{ message.body }}</p>
+              <span>{{ message.created_at|date:"H:i" }} {% if message.is_from_me %}{% if message.is_read %}Read{% else %}Sent{% endif %}{% endif %}</span>
+            </article>
+          {% endfor %}
+        </div>
+
+        <form class="composer" action="{% url 'send_message' active.id %}" method="post">
+          {% csrf_token %}
+          <button type="button" title="Emoji" aria-label="Emoji">:)</button>
+          <input name="body" autocomplete="off" placeholder="Type a message" autofocus>
+          <button class="send" type="submit" title="Send" aria-label="Send">Send</button>
+        </form>
+      {% else %}
+        <div class="empty-state">
+          <div class="empty-phone">
+            <span></span>
+            <span></span>
+            <span></span>
+          </div>
+          <h1>ChatFlow</h1>
+          <p>Your Django WhatsApp-style chat app is ready.</p>
+        </div>
+      {% endif %}
+    </section>
+  </main>
+  <script src="{% static 'chat/app.js' %}"></script>
+</body>
+</html>
